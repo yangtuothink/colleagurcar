@@ -13,9 +13,27 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.conf.urls import url, include
+from rest_framework.documentation import include_docs_urls
+from rest_framework.routers import DefaultRouter
+
+# 使用 routers 的方式
+from order.views import OrderView
+
+router = DefaultRouter()
+
+# 商品的 url
+# 注册后就不需要每个都写一个 url 了.这样集合一个就可以了
+router.register(r'orders', OrderView, basename='orders')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    url(r'admin/', admin.site.urls),
+    url(r'^api-auth/', include('rest_framework.urls')),
+    url(r'docs/', include_docs_urls(title="同事用车")),
+    url(r'^', include(router.urls))
 ]
+
+
+

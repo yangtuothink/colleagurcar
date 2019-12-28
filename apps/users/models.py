@@ -18,6 +18,7 @@ class UserProfile(AbstractUser):
     credit_score = models.IntegerField(default=100, verbose_name="信用积分")
     money = models.CharField(max_length=100, verbose_name="余额", default="")
     
+    
     class Meta:
         verbose_name = "用户信息"
         verbose_name_plural = verbose_name
