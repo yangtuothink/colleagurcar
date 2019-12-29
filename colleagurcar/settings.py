@@ -18,7 +18,8 @@ import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # 添加 apps
-sys.path.insert(0, os.path.join(BASE_DIR, "apps"))
+sys.path.insert(0, BASE_DIR)
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'users',
     'examine',
     'operation',
@@ -92,10 +94,8 @@ DATABASES = {
         "USER": "root",
         "PASSWORD": "",
         "HOST": "127.0.0.1",
-        'OPTIONS': {
-            "init_command": "SET foreign_key_checks = 0;",
-        }
-    },
+        "OPTIONS": {"init_command": "SET default_storage_engine=INNODB;"}
+    }
 }
 
 # Password validation
@@ -117,9 +117,22 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.AutoSchema'
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',  # 被弃用的 token 方式认证
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+    )
 }
 
+import datetime
+
+# 有效期限
+JWT_AUTH = {
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=7),  # 也可以设置seconds=20
+    'JWT_AUTH_HEADER_PREFIX': 'JWT',  # JWT跟前端保持一致，比如“token”这里设置成JWT
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/

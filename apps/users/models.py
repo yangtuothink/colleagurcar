@@ -20,6 +20,8 @@ class UserProfile(AbstractUser):
     department = models.CharField(max_length=100, verbose_name="部门", default="", blank=True, help_text="部门")
     credit_score = models.IntegerField(default=100, verbose_name="信用积分", help_text="信用积分")
     money = models.CharField(max_length=100, verbose_name="余额", default=0, help_text="余额")
+    is_driver = models.CharField(max_length=100, choices=((0, "否"), (1, "是")), verbose_name="是否司机", default="否",
+                                 help_text="是否司机")
     
     class Meta:
         verbose_name = "用户信息"
@@ -29,7 +31,7 @@ class UserProfile(AbstractUser):
         return self.username
 
 
-# 首页广告轮播
+# 银行卡绑定
 class BankCard(models.Model):
     user = models.ForeignKey(UserProfile, verbose_name="用户 id", help_text="用户 id")
     card_num = models.CharField(max_length=200, verbose_name="卡号", help_text="卡号")
@@ -37,7 +39,7 @@ class BankCard(models.Model):
     add_time = models.DateField(default=datetime.now, verbose_name="添加时间")
     
     class Meta:
-        verbose_name = "轮播图"
+        verbose_name = "银行卡绑定"
         verbose_name_plural = verbose_name
 
 

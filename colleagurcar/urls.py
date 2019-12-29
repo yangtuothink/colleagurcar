@@ -16,24 +16,32 @@ Including another URLconf
 
 from django.contrib import admin
 from django.conf.urls import url, include
+from rest_framework import views
+from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.documentation import include_docs_urls
 from rest_framework.routers import DefaultRouter
 
 # 使用 routers 的方式
-from order.views import OrderView
+from rest_framework_jwt.views import obtain_jwt_token
+
+from order.views import OrderView, CourseCommentsView
 
 router = DefaultRouter()
 
 # 商品的 url
 # 注册后就不需要每个都写一个 url 了.这样集合一个就可以了
 router.register(r'orders', OrderView, basename='orders')
+router.register(r'comments', CourseCommentsView, basename='comments')
 
 urlpatterns = [
     url(r'admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'docs/', include_docs_urls(title="同事用车")),
-    url(r'^', include(router.urls))
+    url(r'^', include(router.urls)),
+    
+    # 弃用 token 方式
+    # url(r'^api-token-auth/', obtain_auth_token)
+    
+    # DRF JWT 认证
+    url(r'^login/', obtain_jwt_token),
 ]
-
-
-
