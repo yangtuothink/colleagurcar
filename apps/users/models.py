@@ -14,7 +14,7 @@ class UserProfile(AbstractUser):
     mobile = models.CharField(max_length=11, default="1316XXXX1236", help_text="电话")
     image = models.ImageField(max_length=100, verbose_name="头像", upload_to="users/images/%Y%m%d",
                               default="users/images/default.png", help_text="头像")
-    home = models.CharField(max_length=100,verbose_name="家地址", default="", blank=True, help_text="家地址")
+    home = models.CharField(max_length=100, verbose_name="家地址", default="", blank=True, help_text="家地址")
     company_address = models.CharField(max_length=100, verbose_name="公司地址", default="", blank=True, help_text="公司地址")
     company = models.CharField(max_length=100, verbose_name="公司名称", default="", blank=True, help_text="公司名称")
     department = models.CharField(max_length=100, verbose_name="部门", default="", blank=True, help_text="部门")
@@ -30,9 +30,34 @@ class UserProfile(AbstractUser):
 
 
 # 首页广告轮播
+class BankCard(models.Model):
+    user = models.ForeignKey(UserProfile, verbose_name="用户 id", help_text="用户 id")
+    card_num = models.CharField(max_length=200, verbose_name="卡号", help_text="卡号")
+    bank = models.URLField(max_length=200, verbose_name="所属银行", blank=True, null=True, help_text="所属银行")
+    add_time = models.DateField(default=datetime.now, verbose_name="添加时间")
+    
+    class Meta:
+        verbose_name = "轮播图"
+        verbose_name_plural = verbose_name
+
+
+# 系统信息推送顾客
+class CustomerMessage(models.Model):
+    receiver = models.ForeignKey(UserProfile, verbose_name="接收人", on_delete=models.CASCADE, help_text="接收人 - 顾客 id")
+    message = models.CharField(max_length=500, verbose_name="信息内容", default="", blank=True, help_text="信息内容")
+    has_read = models.CharField(max_length=30, default="未读", choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
+                                blank=True, help_text="是否已读 0/1 - 未/已")
+    add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
+    
+    class Meta:
+        verbose_name = "系统信息推送顾客"
+        verbose_name_plural = verbose_name
+
+
+# 首页广告轮播
 class Banner(models.Model):
     title = models.CharField(max_length=100, verbose_name="标题", null=True, help_text="标题")
-    image = models.ImageField(max_length=200, verbose_name="轮播图", help_text="轮播图")
+    image = models.ImageField(max_length=200, upload_to="users/images/%Y%m%d", verbose_name="轮播图", help_text="轮播图")
     url = models.URLField(max_length=200, verbose_name="访问地址", blank=True, null=True, help_text="访问地址")
     index = models.IntegerField(default=1, verbose_name="顺序", help_text="顺序")
     add_time = models.DateField(default=datetime.now, verbose_name="添加时间")

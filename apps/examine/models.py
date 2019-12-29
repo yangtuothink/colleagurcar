@@ -54,3 +54,28 @@ class FoulRule(models.Model):
     class Meta:
         verbose_name = "司机违规条目"
         verbose_name_plural = verbose_name
+
+
+# 司机违规记录
+class FoulLog(models.Model):
+    applicant = models.ForeignKey(DriverProfile, verbose_name="违规人 - 司机 id", on_delete=models.CASCADE,
+                                  help_text="违规人 -  司机 id")
+    foul_rule = models.ForeignKey(FoulRule, verbose_name="违规条目 id", on_delete=models.CASCADE, help_text="违规条目 id")
+    add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
+    
+    class Meta:
+        verbose_name = "违规记录"
+        verbose_name_plural = verbose_name
+
+
+# 系统信息推送司机
+class DriverMessage(models.Model):
+    receiver = models.ForeignKey(DriverProfile, verbose_name="接收人", on_delete=models.CASCADE, help_text="接收人 司机 id")
+    message = models.CharField(max_length=500, verbose_name="信息内容", default="", blank=True, help_text="信息内容")
+    has_read = models.CharField(max_length=30, default="未读", choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
+                                blank=True, help_text="是否已读 0/1 - 未/已")
+    add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
+    
+    class Meta:
+        verbose_name = "系统信息推送司机"
+        verbose_name_plural = verbose_name

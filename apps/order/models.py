@@ -10,11 +10,12 @@ User = get_user_model()
 # 行程订单
 class Order(models.Model):
     ORDER_STATUS = (
-        (1, "成功"),
-        (2, "超时关闭"),
+        (0, "待进行"),
+        (1, "正在进行"),
+        (2, "待支付"),
         (3, "交易创建"),
         (4, "交易结束"),
-        (0, "待支付"),
+        (5, "超时关闭"),
     )
     customer = models.ForeignKey(User, verbose_name="顾客 id", on_delete=models.CASCADE, help_text="顾客 id")
     driver = models.ForeignKey(DriverProfile, verbose_name="司机 id", on_delete=models.CASCADE, help_text="司机 id")
@@ -30,9 +31,52 @@ class Order(models.Model):
     p_num = models.CharField(max_length=200, verbose_name="乘坐人数", default=1, help_text="乘坐人数")
     s_time = models.DateTimeField(null=True, verbose_name="出发时间", help_text="出发时间", blank=True)
     e_time = models.DateTimeField(null=True, verbose_name="抵达时间", help_text="抵达时间", blank=True)
-    pay_status = models.CharField(choices=ORDER_STATUS, default="待支付", max_length=30, verbose_name="订单状态",
-                                  help_text="订单状态 0/1/2/3/4/5 - 待支付/成功/超时关闭/交易创建/交易结束")
+    pay_status = models.CharField(choices=ORDER_STATUS, default="待进行", max_length=30, verbose_name="订单状态",
+                                  help_text="订单状态 0/1/2/3/4/5 - 待进行/正在进行/待支付/交易创建/交易结束/超时关闭")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间", help_text="添加时间")
+    
+    class Meta:
+        verbose_name = "行程订单"
+        verbose_name_plural = verbose_name
+
+
+# 订单聊天记录
+class ChatMessage(models.Model):
+    order = models.ForeignKey(Order, verbose_name="订单 id", on_delete=models.CASCADE, help_text="订单 id")
+    message = models.CharField(max_length=500, default="", verbose_name="信息内容", blank=True, help_text="信息内容")
+    sender = models.CharField(max_length=30, choices=((1, "乘客"), (2, "司机")), default="乘客")
+    has_read = models.CharField(max_length=30, default="未读", choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
+                                blank=True, help_text="是否已读 0/1 - 未/已")
+    add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
+    
+    class Meta:
+        verbose_name = "订单聊天记录"
+        verbose_name_plural = verbose_name
+
+
+# 用户行程评价
+class CourseComments(models.Model):
+    order = models.ForeignKey(Order, verbose_name="订单 id", on_delete=models.CASCADE, help_text="订单 id")
+    star = models.IntegerField(default=0, verbose_name="星级", blank=True, help_text="星级 1-5")
+    c_label = models.CharField(max_length=30, choices=((1, "好评"), (2, "差评")), default="好评", verbose_name="评论类别",
+                               help_text="评论类别 1:好评, 2:差评 默认 好评")
+    comments = models.CharField(max_length=200, default="", verbose_name="评论内容", blank=True, help_text="评论内容")
+    add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
+    
+    class Meta:
+        verbose_name = "行程评价"
+        verbose_name_plural = verbose_name
+
+
+# 异常取消订单
+class CancelLog(models.Model):
+    order = models.ForeignKey(Order, verbose_name="订单", on_delete=models.CASCADE, help_text="订单 id")
+    cancel = models.CharField(max_length=50, choices=((1, "顾客"), (2, "司机")), help_text="取消者  1/2 - 顾客/司机")
+    punish = models.CharField(max_length=50, blank=True, default="", help_text="取消备注留言")
+    overtime = models.CharField(max_length=50, verbose_name="下单后时长", default="00:02", blank=True,
+                                help_text="下单后时长, 格式: 00:20 ")
+    deduction = models.CharField(max_length=50, verbose_name="扣分值", default=5, blank=True, help_text="扣分值")
+    add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
     
     class Meta:
         verbose_name = "行程订单"
