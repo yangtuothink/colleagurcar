@@ -10,6 +10,9 @@ class OrderSerializer(serializers.ModelSerializer):
     trade_no = serializers.CharField(read_only=True)
     order_sn = serializers.CharField(read_only=True)
     pay_time = serializers.DateTimeField(read_only=True)
+    customer = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
     
     # 生成订单号函数
     def generate_order_sn(self):
@@ -33,18 +36,27 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class DriverSquareSerializer(serializers.ModelSerializer):
+    initiator = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
+    
     class Meta:
         model = DriverSquare
         fields = "__all__"
 
 
 class CustomerSquareSerializer(serializers.ModelSerializer):
+    initiator = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
+    
     class Meta:
         model = CustomerSquare
         fields = "__all__"
 
 
 class CourseCommentsSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = CourseComments
         fields = "__all__"
@@ -57,6 +69,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 
 
 class CancelLogSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = CancelLog
         fields = "__all__"

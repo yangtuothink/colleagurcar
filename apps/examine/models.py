@@ -11,7 +11,7 @@ class DriverProfile(models.Model):
     user_id = models.ForeignKey(User, verbose_name="用户", null=True)
     driver_score = models.IntegerField(default=100, verbose_name="信用积分")
     driver_status = models.CharField(max_length=11, null=True, choices=((0, "待审核"), (2, "吊销"), (1, "正常")),
-                                     default="待审核", verbose_name="司机状态")
+                                     default=0, verbose_name="司机状态")
     driver_money = models.CharField(max_length=100, verbose_name="余额", default=0)
     add_time = models.DateField(default=datetime.now, verbose_name="添加时间")
     
@@ -66,7 +66,7 @@ class FoulLog(models.Model):
 class DriverMessage(models.Model):
     receiver = models.ForeignKey(DriverProfile, verbose_name="接收人", on_delete=models.CASCADE, help_text="接收人 司机 id")
     message = models.CharField(max_length=500, verbose_name="信息内容", default="", blank=True, help_text="信息内容")
-    has_read = models.CharField(max_length=30, default="未读", choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
+    has_read = models.CharField(max_length=30, default=0, choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
                                 blank=True, help_text="是否已读 0/1 - 未/已")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
     

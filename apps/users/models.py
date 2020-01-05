@@ -8,7 +8,7 @@ from django.contrib.auth.models import AbstractUser
 class UserProfile(AbstractUser):
     nick_name = models.CharField(max_length=50, verbose_name="昵称", default="阿一", help_text="昵称")
     birday = models.DateField(verbose_name="生日", null=True, help_text="生日")
-    gender = models.CharField(max_length=6, verbose_name="性别", choices=((0, "男"), (1, "女")), default="男",
+    gender = models.CharField(max_length=6, verbose_name="性别", choices=((0, "男"), (1, "女")), default=0,
                               help_text="性别  0/1 - 男/女")
     address = models.CharField(max_length=100, default="", blank=True, help_text="地址")
     mobile = models.CharField(max_length=11, default="1316XXXX1236", help_text="电话")
@@ -20,7 +20,7 @@ class UserProfile(AbstractUser):
     department = models.CharField(max_length=100, verbose_name="部门", default="", blank=True, help_text="部门")
     credit_score = models.IntegerField(default=100, verbose_name="信用积分", help_text="信用积分")
     money = models.CharField(max_length=100, verbose_name="余额", default=0, help_text="余额")
-    is_driver = models.CharField(max_length=100, choices=((0, "否"), (1, "是")), verbose_name="是否司机", default="否",
+    is_driver = models.CharField(max_length=100, choices=((0, "否"), (1, "是")), verbose_name="是否司机", default=0,
                                  help_text="是否司机")
     
     class Meta:

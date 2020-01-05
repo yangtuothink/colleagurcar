@@ -24,14 +24,17 @@ from rest_framework.routers import DefaultRouter
 # 使用 routers 的方式
 from rest_framework_jwt.views import obtain_jwt_token
 
-from order.views import OrderView, CourseCommentsView
+from order.views import OrderView, CourseCommentsView, DriverSquareView, CustomerSquareView
+from order.views import CancelLogView, ChatMessageView
 
 router = DefaultRouter()
 
-# 商品的 url
-# 注册后就不需要每个都写一个 url 了.这样集合一个就可以了
 router.register(r'orders', OrderView, basename='orders')
 router.register(r'comments', CourseCommentsView, basename='comments')
+router.register(r'driver_square', DriverSquareView, basename='driver_square')
+router.register(r'customer_square', CustomerSquareView, basename='customer_square')
+router.register(r'cancel_log', CancelLogView, basename='cancel_log')
+router.register(r'chat_message', ChatMessageView, basename='chat_message')
 
 urlpatterns = [
     url(r'admin/', admin.site.urls),

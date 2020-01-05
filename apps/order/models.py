@@ -31,7 +31,7 @@ class Order(models.Model):
     p_num = models.CharField(max_length=200, verbose_name="乘坐人数", default=1, help_text="乘坐人数")
     s_time = models.DateTimeField(null=True, verbose_name="出发时间", help_text="出发时间", blank=True)
     e_time = models.DateTimeField(null=True, verbose_name="抵达时间", help_text="抵达时间", blank=True)
-    pay_status = models.CharField(choices=ORDER_STATUS, default="待进行", max_length=30, verbose_name="订单状态",
+    pay_status = models.CharField(choices=ORDER_STATUS, default=0, max_length=30, verbose_name="订单状态",
                                   help_text="订单状态 0/1/2/3/4/5 - 待进行/正在进行/待支付/交易创建/交易结束/超时关闭")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间", help_text="添加时间")
     
@@ -44,8 +44,9 @@ class Order(models.Model):
 class ChatMessage(models.Model):
     order = models.ForeignKey(Order, verbose_name="订单 id", on_delete=models.CASCADE, help_text="订单 id")
     message = models.CharField(max_length=500, default="", verbose_name="信息内容", blank=True, help_text="信息内容")
-    sender = models.CharField(max_length=30, choices=((1, "乘客"), (2, "司机")), default="乘客")
-    has_read = models.CharField(max_length=30, default="未读", choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
+    sender = models.CharField(max_length=30, choices=((1, "乘客"), (2, "司机")), default=1,
+                              verbose_name="发送人角色 1/2 - 乘客/司机")
+    has_read = models.CharField(max_length=30, default=0, choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
                                 blank=True, help_text="是否已读 0/1 - 未/已")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
     
@@ -56,9 +57,11 @@ class ChatMessage(models.Model):
 
 # 用户行程评价
 class CourseComments(models.Model):
-    order = models.ForeignKey(Order, verbose_name="订单 id", on_delete=models.CASCADE, help_text="订单 id")
+    order = models.ForeignKey(Order, verbose_name="订单 id", on_delete=models.CASCADE, help_text="订单 id", unique=True)
     star = models.IntegerField(default=0, verbose_name="星级", blank=True, help_text="星级 1-5")
-    c_label = models.CharField(max_length=30, choices=((1, "好评"), (2, "差评")), default="好评", verbose_name="评论类别",
+    submitter = models.CharField(max_length=30, choices=((1, "乘客"), (2, "司机")), default=1,
+                                 verbose_name="提交评论角色  1/2 - 乘客/司机")
+    c_label = models.CharField(max_length=30, choices=((1, "好评"), (2, "差评")), default=1, verbose_name="评论类别",
                                help_text="评论类别 1:好评, 2:差评 默认 好评")
     comments = models.CharField(max_length=200, default="", verbose_name="评论内容", blank=True, help_text="评论内容")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
@@ -70,8 +73,8 @@ class CourseComments(models.Model):
 
 # 异常取消订单
 class CancelLog(models.Model):
-    order = models.ForeignKey(Order, verbose_name="订单", on_delete=models.CASCADE, help_text="订单 id")
-    cancel = models.CharField(max_length=50, choices=((1, "顾客"), (2, "司机")), help_text="取消者  1/2 - 顾客/司机")
+    order = models.ForeignKey(Order, verbose_name="订单", on_delete=models.CASCADE, help_text="订单 id", unique=True)
+    cancel = models.CharField(max_length=50, choices=((1, "顾客"), (2, "司机")), help_text="取消人角色  1/2 - 顾客/司机")
     punish = models.CharField(max_length=50, blank=True, default="", help_text="取消备注留言")
     overtime = models.CharField(max_length=50, verbose_name="下单后时长", default="00:02", blank=True,
                                 help_text="下单后时长, 格式: 00:20 ")
@@ -91,9 +94,9 @@ class DriverSquare(models.Model):
     remarks = models.CharField(max_length=200, verbose_name="备注", default="", blank=True, help_text="备注")
     mount = models.CharField(max_length=200, verbose_name="预测金额", default=30, blank=True, help_text="预测金额")
     p_num = models.CharField(max_length=200, verbose_name="乘坐人数", default=1, help_text="乘坐人数")
-    r_status = models.CharField(choices=((1, "已预订"), (0, "待预定")), default="待预定", max_length=30, verbose_name="订单状态",
+    r_status = models.CharField(choices=((1, "已预订"), (0, "待预定")), default=0, max_length=30, verbose_name="订单状态",
                                 help_text="订单状态")
-    label_type = models.CharField(choices=((1, "上班"), (2, "下班"),), default="上班", max_length=30, verbose_name="出行类别",
+    label_type = models.CharField(choices=((1, "上班"), (2, "下班"),), default=1, max_length=30, verbose_name="出行类别",
                                   help_text="出行类别")
     s_time = models.DateTimeField(verbose_name="出发起始时间", help_text="出发起始时间")
     e_time = models.DateTimeField(verbose_name="出发截止时间", help_text="出发截止时间")
@@ -112,9 +115,9 @@ class CustomerSquare(models.Model):
     remarks = models.CharField(max_length=200, verbose_name="备注", default="", blank=True, help_text="备注")
     mount = models.CharField(max_length=200, verbose_name="预测金额", default="", blank=True, help_text="预测金额")
     p_num = models.CharField(max_length=200, verbose_name="乘坐人数", default=1, help_text="乘坐人数")
-    r_status = models.CharField(choices=((1, "已预订"), (0, "待预定")), default="待预定", max_length=30, verbose_name="订单状态",
+    r_status = models.CharField(choices=((1, "已预订"), (0, "待预定")), default=0, max_length=30, verbose_name="订单状态",
                                 help_text="订单状态")
-    label_type = models.CharField(choices=((1, "上班"), (2, "下班"),), default="上班", max_length=30, verbose_name="出行类别",
+    label_type = models.CharField(choices=((1, "上班"), (2, "下班"),), default=1, max_length=30, verbose_name="出行类别",
                                   help_text="出行类别")
     s_time = models.DateTimeField(verbose_name="出发时间", help_text="出发时间")
     add_time = models.DateTimeField(verbose_name="添加时间", help_text="添加时间")

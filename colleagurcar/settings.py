@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    "django_filters",
     'users',
     'examine',
     'operation',
@@ -122,6 +123,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         # 'rest_framework.authentication.TokenAuthentication',  # 被弃用的 token 方式认证
+        # 全程都需要在登陆状态下, 因此全局配置即可
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
     )
 }
