@@ -11,7 +11,7 @@ class UserProfile(AbstractUser):
     gender = models.CharField(max_length=6, verbose_name="性别", choices=((0, "男"), (1, "女")), default=0,
                               help_text="性别  0/1 - 男/女")
     address = models.CharField(max_length=100, default="", blank=True, help_text="地址")
-    mobile = models.CharField(max_length=11, default="1316XXXX1236", help_text="电话")
+    mobile = models.CharField(max_length=11, default="15681234566", help_text="电话")
     image = models.ImageField(max_length=100, verbose_name="头像", upload_to="users/images/%Y%m%d",
                               default="users/images/default.png", help_text="头像")
     home = models.CharField(max_length=100, verbose_name="家地址", default="", blank=True, help_text="家地址")

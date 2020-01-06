@@ -28,7 +28,7 @@ class ExamineLog(models.Model):
     b_id_card = models.ImageField(verbose_name="身份证背面照", default="", blank=True)
     f_car = models.ImageField(verbose_name="车正面照", default="", blank=True)
     l_car = models.ImageField(verbose_name="车左侧照", default="", blank=True)
-    r_car = models.ImageField(verbose_name="车右侧照", default="", blank=True)
+    r_car = models.ImageField(verbose_name="车后侧照", default="", blank=True)
     status = models.CharField(max_length=30, null=True, choices=((0, "待审核"), (2, "未通过"), (1, "通过")), default=0,
                               verbose_name="审核状态 0/1/2 - 待审核/通过/未通过")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
