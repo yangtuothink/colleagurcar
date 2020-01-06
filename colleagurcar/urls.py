@@ -44,4 +44,8 @@ urlpatterns = [
     
     # DRF JWT 认证
     url(r'^login/', obtain_jwt_token),
+
+    # 用户操作接口
+    url(r"^api/user/", include("users.urls"))
+
 ]
