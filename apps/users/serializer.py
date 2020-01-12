@@ -4,6 +4,12 @@ from rest_framework import serializers
 from .models import UserProfile, BankCard, CustomerMessage, Banner
 
 
+class BankCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BankCard
+        fields = "__all__"
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     banks = serializers.SerializerMethodField()
 
@@ -19,16 +25,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         exclude = ["password", "date_joined", "is_superuser"]
 
 
-class describeOtherInfo(serializers.ModelSerializer):
+# 获取其他用户的信息
+class UserOtherSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
     class Meta:
         model = UserProfile
-        fields = ["company", "department", "nick_name", "image", "mobile", "credit_score"]
-
-
-class BankCardSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BankCard
-        fields = "__all__"
+        exclude = ["password", "date_joined", "is_superuser"]
 
 
 class CustomerMessageSerializer(serializers.ModelSerializer):

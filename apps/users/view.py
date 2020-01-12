@@ -2,13 +2,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
-from rest_framework import permissions
+from rest_framework import permissions, viewsets, mixins
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet
 
 from common.keys import AD_CAROUSEL_PAGES
-from common.user_auth import Authentication
 from examine.models import ExamineLog
 from users.models import UserProfile
 from users.serializer import *
@@ -34,60 +35,85 @@ class CustomBackend(ModelBackend):
             return None
 
 
-class UserRegister(APIView):
+class UserInfoOption(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.ViewSet):
+    '''
+    create:
+        创建用户 必要参数:
 
-    def post(self, request):
+        字段中文    字段英文         是否必传
+        昵称        nick_name       是
+        用户名称    username        是
+        密码        password       是
+
+
+    retrieve:
+        获取用户 必要参数
+
+        字段中文    字段英文      是否必传
+        用户id    id             是
+
+
+    '''
+    permission_classes = (IsAuthenticated,)
+
+    # 创建用户
+    def create(self, request, *args, **kwargs):
         user = UserProfile()
-        user.nick_name = "qwp12"
-        user.username = "122232"
-        user.password = make_password("123456")
+        user.nick_name = request.POST.get("nick_name")
+        user.username = request.POST.get("username")
+        user.password = make_password(request.POST.get("password"))
         user.save()
-        ret = render_success()
-        return Response(ret)
+        ret = UserProfileSerializer(user)
+        return Response(ret.data)
 
-
-class UserOption(GenericViewSet):
-    authentication_classes = [Authentication, ]
-
-    # 用户修改信息
-    def modify_user_info(self, request):
-        img_icon = request.FILES.get("UserAvatar")
-        nick_name = request.POST.get("NickName")
-        user = request.user
-        user.nick_name = nick_name
-        user.image = img_icon
-        user.save()
-        ret = render_success()
-        return Response(ret)
-
-    # 获取用户的资料
-    def get_user_profile(self, request):
-        user = request.user
-        ser = UserProfileSerializer(instance=user)
-        ret = render_success(data=ser.data)
-        return Response(ret)
-
-
-class OtherUser(GenericViewSet):
-    # 获取其他用户信息
-    def get_other_info(self, request):
-        uid = request.query_params.get("uid")
-        user = UserProfile.objects.filter(pk=uid)
+    # 获取用户id的资料
+    def retrieve(self, request, *args, **kwargs):
+        pk = kwargs.get("pk")
+        user = UserProfile.objects.filter(id=pk)
+        curr_user = request.user
         if user.exists():
-            ser = describeOtherInfo(instance=user.first())
-            ret = render_success(data=ser.data)
-            return Response(ret)
+            if curr_user != user.first():
+                ser = UserOtherSerializer(instance=user.first())
+            else:
+                ser = UserProfileSerializer(instance=curr_user)
+            return Response(ser.data)
         else:
-            code = "用户Id信息错误"
-            ret = render_fail(code)
+            ret = render_fail("未找到用户")
             return Response(ret)
 
 
-class AdRecommendation(GenericViewSet):
-    '''广告推荐接口'''
+class ModifyUserInfo(mixins.CreateModelMixin, viewsets.ViewSet):
+    '''
+    create:
+        创建用户 必要参数:
 
-    def recommend_list(self, request):
-        ad = Banner.objects.order_by("-index").all()[:AD_CAROUSEL_PAGES]
-        data = BannerSerializer(instance=ad, many=True)
-        ret = render_success(data=data)
-        return Response(ret)
+        字段中文    字段英文         是否必传
+        用户图片     user_avatar      否
+        昵称        nick_name        否
+
+    '''
+
+    permission_classes = (IsAuthenticated,)
+    # 用户修改信息
+    def create(self, request, *args, **kwargs):
+        img_icon = request.FILES.get("user_avatar")
+        nick_name = request.POST.get("nick_name")
+        user = request.user
+        if img_icon:
+            user.image = img_icon
+        if nick_name:
+            user.nick_name = nick_name
+        user.save()
+        ret = UserProfileSerializer(user)
+        return Response(ret.data)
+
+
+class BannerViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
+    '''
+        list:
+            获取轮播图列表 必要参数:
+
+            无
+    '''
+    queryset = Banner.objects.all().order_by("index")[:AD_CAROUSEL_PAGES]
+    serializer_class = BannerSerializer
