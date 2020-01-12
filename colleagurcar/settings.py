@@ -30,7 +30,7 @@ SECRET_KEY = '&%xhk*ib!e$=d2r=m^fg6usg5kqro&9xn-78l!=iws!l=q=ij@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 # 合并使用 自定义的 用户表
 AUTH_USER_MODEL = "users.UserProfile"
@@ -159,4 +159,12 @@ USE_TZ = False
 
 STATIC_URL = '/static/'
 
+MEDIA_URL = "/media/"
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
+
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+# 当url结尾没有/报错的处理
+APPEND_SLASH=False
