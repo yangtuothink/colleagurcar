@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.hashers import make_password
+from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
@@ -29,39 +30,44 @@ class CustomBackend(ModelBackend):
             return None
 
 
-class UserInfoOption(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.ViewSet):
+class UserInfoOption(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     '''
     create:
-        创建用户 必要参数:
-
-        字段中文    字段英文         是否必传
-        昵称        nick_name       是
-        用户名称    username        是
-        密码        password       是
-
+        创建用户
 
     retrieve:
-        获取用户 必要参数
-
-        字段中文    字段英文      是否必传
-        用户id    id             是
-
-
+        获取用户
     '''
-    permission_classes = (IsAuthenticated,)
+    serializer_class = CreateUserProfile
+
+    def get_permissions(self):
+        if self.action != "create":
+            return [IsAuthenticated(), ]
+        return []
 
     # 创建用户
     def create(self, request, *args, **kwargs):
         user = UserProfile()
-        user.nick_name = request.POST.get("nick_name")
-        user.username = request.POST.get("username")
-        user.password = make_password(request.POST.get("password"))
-        user.save()
-        ret = UserProfileSerializer(user)
-        return Response(ret.data)
+        nick_name = request.POST.get("nick_name")
+        username = request.POST.get("username")
+        password = make_password(request.POST.get("password"))
+
+        if nick_name and username and password:
+            user.nick_name = nick_name
+            user.username = username
+            user.password = password
+            try:
+                user.save()
+                ret = UserProfileSerializer(user)
+                return Response(ret.data)
+            except IntegrityError as e:
+                return Response({"error": "用户已存在"})
+        else:
+            return Response({"error": "传入参数错误"})
 
     # 获取用户id的资料
     def retrieve(self, request, *args, **kwargs):
+        print(request.user)
         pk = kwargs.get("pk")
         user = UserProfile.objects.filter(id=pk)
         curr_user = request.user
@@ -75,28 +81,27 @@ class UserInfoOption(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewset
             return Response({"error": "未找到用户"})
 
 
-class ModifyUserInfo(mixins.CreateModelMixin, viewsets.ViewSet):
+class ModifyUserInfo(mixins.CreateModelMixin, viewsets.GenericViewSet):
     '''
     create:
-        创建用户 必要参数:
-
-        字段中文    字段英文         是否必传
-        用户图片     user_avatar      否
-        昵称        nick_name        否
-
+        修改用户信息
     '''
 
     permission_classes = (IsAuthenticated,)
+    serializer_class = UserOtherSerializer
 
     # 用户修改信息
     def create(self, request, *args, **kwargs):
         img_icon = request.FILES.get("user_avatar")
         nick_name = request.POST.get("nick_name")
+        mobile = request.POST.get("mobile")
         user = request.user
         if img_icon:
             user.image = img_icon
         if nick_name:
             user.nick_name = nick_name
+        if mobile:
+            user.mobile = mobile
         user.save()
         ret = UserProfileSerializer(user)
         return Response(ret.data)
@@ -105,9 +110,7 @@ class ModifyUserInfo(mixins.CreateModelMixin, viewsets.ViewSet):
 class BannerViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
     '''
         list:
-            获取轮播图列表 必要参数:
-
-            无
+            获取轮播图列表
     '''
     queryset = Banner.objects.all().order_by("index")[:AD_CAROUSEL_PAGES]
     serializer_class = BannerSerializer

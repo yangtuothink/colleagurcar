@@ -27,10 +27,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 # 获取其他用户的信息
 class UserOtherSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField()
+    image = serializers.ImageField(help_text="用户图像")
+    nick_name = serializers.CharField(help_text="昵称")
+    username = serializers.CharField(required=False, help_text="用户名")
+
     class Meta:
         model = UserProfile
         exclude = ["password", "date_joined", "is_superuser"]
+
+
+class CreateUserProfile(serializers.ModelSerializer):
+    nick_name = serializers.CharField(help_text="昵称")
+    username = serializers.CharField(help_text="用户名")
+    password = serializers.CharField(help_text="密码")
+
+    class Meta:
+        model = UserProfile
+        fields = "__all__"
 
 
 class CustomerMessageSerializer(serializers.ModelSerializer):

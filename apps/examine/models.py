@@ -23,12 +23,12 @@ class DriverProfile(models.Model):
 # 审核记录
 class ExamineLog(models.Model):
     applicant = models.ForeignKey(DriverProfile, verbose_name="司机 id", help_text="司机 id")
-    license = models.ImageField(verbose_name="驾照", upload_to="examine/images/%Y%m%d",default="", blank=True)
-    f_id_card = models.ImageField(verbose_name="身份证正面照",upload_to="examine/images/%Y%m%d", default="", blank=True)
-    b_id_card = models.ImageField(verbose_name="身份证背面照", upload_to="examine/images/%Y%m%d",default="", blank=True)
-    f_car = models.ImageField(verbose_name="车正面照", upload_to="examine/images/%Y%m%d",default="", blank=True)
-    l_car = models.ImageField(verbose_name="车左侧照",upload_to="examine/images/%Y%m%d", default="", blank=True)
-    r_car = models.ImageField(verbose_name="车后侧照", upload_to="examine/images/%Y%m%d",default="", blank=True)
+    license = models.ImageField(verbose_name="驾照", upload_to="examine/images/%Y%m%d",default="", blank=True, help_text="驾照")
+    f_id_card = models.ImageField(verbose_name="身份证正面照",upload_to="examine/images/%Y%m%d", default="", blank=True, help_text="身份证正面照")
+    b_id_card = models.ImageField(verbose_name="身份证背面照", upload_to="examine/images/%Y%m%d",default="", blank=True, help_text="身份证背面照")
+    f_car = models.ImageField(verbose_name="车正面照", upload_to="examine/images/%Y%m%d",default="", blank=True, help_text="车正面照")
+    l_car = models.ImageField(verbose_name="车左侧照",upload_to="examine/images/%Y%m%d", default="", blank=True, help_text="车左侧照")
+    r_car = models.ImageField(verbose_name="车后侧照", upload_to="examine/images/%Y%m%d",default="", blank=True, help_text="车后侧照")
     status = models.CharField(max_length=30, null=True, choices=((0, "待审核"), (2, "未通过"), (1, "通过")), default=0,
                               verbose_name="审核状态 0/1/2 - 待审核/通过/未通过")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
