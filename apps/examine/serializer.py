@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from examine.models import ExamineLog, DriverProfile
-from users.models import UserProfile
 from users.serializer import UserProfileSerializer
 
 

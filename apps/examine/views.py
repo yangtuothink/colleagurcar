@@ -4,13 +4,13 @@ from rest_framework.response import Response
 
 from examine.models import ExamineLog, DriverProfile
 from examine.serializer import DriverProfileSerializer
-from utils.http import render_fail
 
 
 class VerifyIdentyInfo(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.ViewSet):
     '''
     create:
         上传车主审核信息 必要参数:
+
 
             字段中文    字段英文         是否必传
             身份证前照   IdCardFront     是
@@ -55,9 +55,7 @@ class VerifyIdentyInfo(mixins.CreateModelMixin, mixins.RetrieveModelMixin, views
             return Response(ser.data)
 
         else:
-            code = "上传信息不足"
-            ret = render_fail(code)
-            return Response(ret)
+            return Response({"error":"上传信息不足"})
 
     # 查看当前的审核进度
     def retrieve(self, request, *args, **kwargs):
@@ -111,6 +109,4 @@ class UpdateVerifyIdentyInfo(mixins.CreateModelMixin, viewsets.ViewSet):
             ser = DriverProfileSerializer(instance=driver_user)
             return Response(ser.data)
         else:
-            code = "未开通司机验证"
-            ret = render_fail(code)
-            return Response(ret)
+            return Response({"error":"未开通司机验证"})

@@ -2,18 +2,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
-from rest_framework import permissions, viewsets, mixins
-from rest_framework.generics import GenericAPIView
+from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet, ViewSet
 
 from common.keys import AD_CAROUSEL_PAGES
-from examine.models import ExamineLog
-from users.models import UserProfile
 from users.serializer import *
-from utils.http import render_success, render_fail
 
 User = get_user_model()
 
@@ -78,8 +72,7 @@ class UserInfoOption(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewset
                 ser = UserProfileSerializer(instance=curr_user)
             return Response(ser.data)
         else:
-            ret = render_fail("未找到用户")
-            return Response(ret)
+            return Response({"error": "未找到用户"})
 
 
 class ModifyUserInfo(mixins.CreateModelMixin, viewsets.ViewSet):
@@ -94,6 +87,7 @@ class ModifyUserInfo(mixins.CreateModelMixin, viewsets.ViewSet):
     '''
 
     permission_classes = (IsAuthenticated,)
+
     # 用户修改信息
     def create(self, request, *args, **kwargs):
         img_icon = request.FILES.get("user_avatar")
