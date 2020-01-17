@@ -131,7 +131,7 @@ class CourseComments(models.Model):
 
 # 异常取消订单
 class CancelLog(models.Model):
-    m_order = models.ForeignKey(CustomerOrder, verbose_name="订单", on_delete=models.CASCADE, help_text="订单 id",
+    m_order = models.ForeignKey(DriverOrder, verbose_name="订单", on_delete=models.CASCADE, help_text="订单 id",
                                 null=True)
     order = models.ForeignKey(CustomerOrder, verbose_name="订单", on_delete=models.CASCADE, help_text="订单 id",
                               unique=True)
