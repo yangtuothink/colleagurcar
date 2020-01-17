@@ -1,15 +1,16 @@
 from django.db.models import Q
 from rest_framework import viewsets, mixins
-from rest_framework.filters import OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
-from order.serializer import OrderSerializer, DriverSquareSerializer, CustomerSquareSerializer
+from order.filters import DriverOrderFilter, CustomerOrderFilter
+from order.serializer import DriverOrderSerializer, CustomerOrderSerializer
 from order.serializer import CancelLogSerializer, ChatMessageSerializer, CourseCommentsSerializer
-from utils.permissioms import OrderHasUserOrReadOnly, UserIsDriver, UserIsCustomer
-from .models import Order, DriverSquare, CustomerSquare, CancelLog, ChatMessage, CourseComments
+from utils.permissioms import OrderHasUserOrReadOnly, IsOrderCustomer, IsOrderDriver
+from .models import DriverOrder, CustomerOrder, CancelLog, ChatMessage, CourseComments
 
 
 # 分页
@@ -24,8 +25,42 @@ class CustomPagination(PageNumberPagination):
     max_page_size = 100
 
 
-# 订单视图
-class OrderView(viewsets.ModelViewSet):
+# 司机订单视图
+class DriverOrderView(viewsets.ModelViewSet):
+    """
+    list:
+    返回当前用户司机订单数据
+
+    update:
+    更新用户司机订单
+
+    create:
+    创建用户司机订单
+    
+    read:
+    查看单条司机订单
+    """
+    serializer_class = DriverOrderSerializer
+    pagination_class = CustomPagination
+    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
+    filterset_class = DriverOrderFilter
+    permission_classes = (IsAuthenticated, IsOrderDriver)
+    ordering_fields = ['add_time', ]
+    search_fields = ["origin", "finish"]
+    
+    def perform_create(self, serializer):
+        if self.request.user.is_driver == "y":
+            return "无权操作"
+        return serializer.save()
+    
+    def get_queryset(self):
+        if self.request.user.is_driver == "y":
+            return DriverOrder.objects.all().filter(initiator=self.request.user)
+        return DriverOrder.objects.all()
+
+
+# 用户订单视图
+class CustomerOrderView(viewsets.ModelViewSet):
     """
     list:
     返回当前用户订单数据
@@ -35,73 +70,28 @@ class OrderView(viewsets.ModelViewSet):
 
     create:
     创建用户订单
-    
+
     read:
     查看单条订单
     """
-    serializer_class = OrderSerializer
+    serializer_class = CustomerOrderSerializer
     pagination_class = CustomPagination
-    filter_backends = (OrderingFilter,)
-    permission_classes = (IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
+    permission_classes = (IsAuthenticated, IsOrderCustomer)
+    filterset_class = CustomerOrderFilter
     ordering_fields = ['add_time']
+    filterset_fields = ["label_type"]
+    search_fields = ("origin", "finish")
     
     def get_queryset(self):
-        # 获得当前登录人的 订单
-        return Order.objects.all().filter(Q(customer=self.request.user) | Q(driver__user_id=self.request.user))
-
-
-# 司机行程广场
-class DriverSquareView(viewsets.ModelViewSet):
-    """
-    list:
-    返回司机行程广场数据
-
-    update:
-    更新司机行程广场数据
-
-    create:
-    创建司机行程广场数据
-
-    read:
-    查看单条司机行程广场数据
-
-    delete:
-    删除司机行程广场数据
-    """
-    queryset = DriverSquare.objects.filter(r_status=0)
-    serializer_class = DriverSquareSerializer
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
-    pagination_class = CustomPagination
-    permission_classes = (IsAuthenticated, UserIsDriver)
-    ordering_fields = ['add_time']
-    filterset_fields = ["label_type", "origin", "finish"]
-
-
-# 乘客行程广场
-class CustomerSquareView(viewsets.ModelViewSet):
-    """
-    list:
-    返回乘客行程广场数据
-
-    update:
-    更新乘客行程广场数据
-
-    create:
-    创建乘客行程广场数据
-
-    read:
-    查看单条乘客行程广场数据
-
-    delete:
-    删除乘客行程广场数据
-    """
-    serializer_class = CustomerSquareSerializer
-    queryset = CustomerSquare.objects.filter(r_status=0)
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
-    pagination_class = CustomPagination
-    permission_classes = (IsAuthenticated, UserIsCustomer)
-    ordering_fields = ['add_time']
-    filterset_fields = ["label_type", "origin", "finish"]
+        if self.request.user.is_driver == "n":
+            return CustomerOrder.objects.all().filter(initiator=self.request.user)
+        return CustomerOrder.objects.all()
+    
+    def perform_create(self, serializer):
+        if self.request.user.is_driver == "n":
+            return "无权操作"
+        serializer.save()
 
 
 # 取消订单日志
@@ -126,7 +116,7 @@ class CancelLogView(GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelM
     def get_queryset(self):
         # 获得当前登录人的取消订单记录
         return CancelLog.objects.filter(
-            Q(order__customer=self.request.user) | Q(order__driver__user_id=self.request.user))
+            Q(order__initiator__user_id=self.request.user) | Q(m_order__initiator__user_id=self.request.user))
 
 
 # 订单聊天记录
@@ -148,7 +138,7 @@ class ChatMessageView(GenericViewSet, mixins.ListModelMixin, mixins.CreateModelM
     def get_queryset(self):
         # 获得当前登录人的订单聊天记录
         return ChatMessage.objects.filter(
-            Q(order__customer=self.request.user) | Q(order__driver__user_id=self.request.user))
+            Q(order__initiator__user_id=self.request.user) | Q(m_order__initiator__user_id=self.request.user))
 
 
 # 订单评论记录
@@ -172,5 +162,9 @@ class CourseCommentsView(GenericViewSet, mixins.ListModelMixin, mixins.RetrieveM
     
     def get_queryset(self):
         # 获得当前登录人的评论记录
-        return CourseComments.objects.filter(
-            Q(order__customer=self.request.user) | Q(order__driver__user_id=self.request.user))
+        return CourseComments.objects.filter(order__initiator__user_id=self.request.user)
+    
+    def perform_create(self, serializer):
+        if self.request.user.is_driver == "y":
+            return "无权操作"
+        serializer.save()

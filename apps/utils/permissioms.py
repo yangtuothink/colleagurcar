@@ -6,12 +6,12 @@ class OrderHasUserOrReadOnly(permissions.BasePermission):
     """
     订单相关人员权限判定 - 指定 乘客 / 司机
     """
-    
+
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
         
-        return obj.order__customer == request.user or obj.order__driver__user_id == request.user
+        return obj.initiator == request.user
 
 
 class IsOrderCustomer(permissions.BasePermission):
@@ -23,7 +23,7 @@ class IsOrderCustomer(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         
-        return obj.order__customer == request.user
+        return obj.initiator == request.user and request.user.is_driver == "n"
 
 
 class IsOrderDriver(permissions.BasePermission):
@@ -34,27 +34,4 @@ class IsOrderDriver(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        return obj.order__driver__user_id == request.user
-
-
-class UserIsDriver(permissions.BasePermission):
-    """
-    司机行程广场 司机身份 权限判定
-    """
-    
-    def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return obj.initiator__user_id == request.user
-
-
-class UserIsCustomer(permissions.BasePermission):
-    """
-    乘客行程广场 乘客身份 权限判定
-    """
-    
-    def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return obj.initiator == request.user
+        return obj.initiator == request.user and request.user.is_driver == "y"

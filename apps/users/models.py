@@ -7,9 +7,9 @@ from django.contrib.auth.models import AbstractUser
 # 用户表 - 继承
 class UserProfile(AbstractUser):
     nick_name = models.CharField(max_length=50, verbose_name="昵称", default="阿一", help_text="昵称")
-    birday = models.DateField(verbose_name="生日", null=True, help_text="生日")
-    gender = models.CharField(max_length=6, verbose_name="性别", choices=((0, "男"), (1, "女")), default=0,
-                              help_text="性别  0/1 - 男/女")
+    birday = models.DateField(verbose_name="生日", null=True, help_text="生日", default=datetime.now)
+    gender = models.CharField(max_length=6, verbose_name="性别", choices=(("male", "男"), ("female", "女")), default="male",
+                              help_text="性别  male/female - 男/女")
     address = models.CharField(max_length=100, default="", blank=True, help_text="地址")
     mobile = models.CharField(max_length=11, default="15681234566", help_text="电话")
     image = models.ImageField(max_length=100, verbose_name="头像", upload_to="users/images/%Y%m%d",
@@ -20,7 +20,7 @@ class UserProfile(AbstractUser):
     department = models.CharField(max_length=100, verbose_name="部门", default="", blank=True, help_text="部门")
     credit_score = models.IntegerField(default=100, verbose_name="信用积分", help_text="信用积分")
     money = models.CharField(max_length=100, verbose_name="余额", default=0, help_text="余额")
-    is_driver = models.CharField(max_length=100, choices=((0, "否"), (1, "是")), verbose_name="是否司机", default=0,
+    is_driver = models.CharField(max_length=100, choices=(("n", "否"), ("y", "是")), verbose_name="是否司机", default="n",
                                  help_text="是否司机")
     
     class Meta:
@@ -47,7 +47,7 @@ class BankCard(models.Model):
 class CustomerMessage(models.Model):
     receiver = models.ForeignKey(UserProfile, verbose_name="接收人", on_delete=models.CASCADE, help_text="接收人 - 顾客 id")
     message = models.CharField(max_length=500, verbose_name="信息内容", default="", blank=True, help_text="信息内容")
-    has_read = models.CharField(max_length=30, default="未读", choices=((1, "已读"), (0, "未读")), verbose_name="是否已读",
+    has_read = models.CharField(max_length=30, default="未读", choices=(("y", "已读"), ("n", "未读")), verbose_name="n",
                                 blank=True, help_text="是否已读 0/1 - 未/已")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
     

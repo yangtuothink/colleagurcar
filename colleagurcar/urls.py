@@ -27,20 +27,19 @@ from rest_framework_jwt.views import obtain_jwt_token
 
 from colleagurcar.settings import MEDIA_ROOT
 from examine.views import VerifyIdentyInfo, UpdateVerifyIdentyInfo
-from order.views import OrderView, CourseCommentsView, DriverSquareView, CustomerSquareView
+from order.views import DriverOrderView, CustomerOrderView, CourseCommentsView
 from order.views import CancelLogView, ChatMessageView
 from users.view import BannerViewset, UserInfoOption, ModifyUserInfo
 
 router = DefaultRouter()
 
-router.register(r'orders', OrderView, basename='orders')
+router.register(r'driver_orders', DriverOrderView, basename='driver_orders')
+router.register(r'customer_orders', CustomerOrderView, basename='customer_orders')
 router.register(r'comments', CourseCommentsView, basename='comments')
-router.register(r'driver_square', DriverSquareView, basename='driver_square')
-router.register(r'customer_square', CustomerSquareView, basename='customer_square')
 router.register(r'cancel_log', CancelLogView, basename='cancel_log')
 router.register(r'chat_message', ChatMessageView, basename='chat_message')
 
-#轮播图url
+# 轮播图url
 router.register(r'banners', BannerViewset, basename="banners")
 router.register(r'users', UserInfoOption, basename="users")
 router.register(r'cart_users', VerifyIdentyInfo, basename="cart_users")
