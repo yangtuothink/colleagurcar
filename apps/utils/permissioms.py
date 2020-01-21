@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
+from order.models import DriverOrder, CustomerOrder, CancelLog, ChatMessage, CourseComments
 
 
-class OrderHasUserOrReadOnly(permissions.BasePermission):
+class CommentsReadOnly(permissions.BasePermission):
     """
-    订单相关人员权限判定 - 指定 乘客 / 司机
+    评论权限
     """
-
+    
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        return obj.initiator == request.user
+        elif CourseComments.objects.filter(order__initiator=request.user):
+            return True
+        return False
 
 
 class IsOrderCustomer(permissions.BasePermission):

@@ -1,7 +1,7 @@
-from django.db.models import Q
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from order.filters import DriverOrderFilter, CustomerOrderFilter
 from order.serializer import DriverOrderSerializer, CustomerOrderSerializer
 from order.serializer import CancelLogSerializer, ChatMessageSerializer, CourseCommentsSerializer
-from utils.permissioms import OrderHasUserOrReadOnly, IsOrderCustomer, IsOrderDriver
+from utils.permissioms import IsOrderCustomer, IsOrderDriver, CommentsReadOnly
 from .models import DriverOrder, CustomerOrder, CancelLog, ChatMessage, CourseComments
 
 
@@ -48,15 +48,25 @@ class DriverOrderView(viewsets.ModelViewSet):
     ordering_fields = ['add_time', ]
     search_fields = ["origin", "finish"]
     
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = self.perform_create(serializer)
+        re_dict = serializer.data if order else "无权操作"
+        headers = self.get_success_headers(serializer.data)
+        return Response(re_dict, status=status.HTTP_201_CREATED, headers=headers)
+    
     def perform_create(self, serializer):
+        print(self.request.user.is_driver)
         if self.request.user.is_driver == "y":
-            return "无权操作"
-        return serializer.save()
+            return serializer.save()
     
     def get_queryset(self):
+        # 司机状态只能查看自己的订单
         if self.request.user.is_driver == "y":
             return DriverOrder.objects.all().filter(initiator=self.request.user)
-        return DriverOrder.objects.all()
+        # 乘客看到所有待预定的订单
+        return DriverOrder.objects.filter(r_status="y")
 
 
 # 用户订单视图
@@ -84,14 +94,77 @@ class CustomerOrderView(viewsets.ModelViewSet):
     search_fields = ("origin", "finish")
     
     def get_queryset(self):
+        # 乘客只能查看自己的订单
         if self.request.user.is_driver == "n":
             return CustomerOrder.objects.all().filter(initiator=self.request.user)
-        return CustomerOrder.objects.all()
+        # 司机看到所有可预约的订单
+        return CustomerOrder.objects.filter(r_status="y")
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = self.perform_create(serializer)
+        re_dict = serializer.data if order else "无权操作"
+        headers = self.get_success_headers(serializer.data)
+        return Response(re_dict, status=status.HTTP_201_CREATED, headers=headers)
     
     def perform_create(self, serializer):
         if self.request.user.is_driver == "n":
-            return "无权操作"
-        serializer.save()
+            return serializer.save()
+
+
+# 订单聊天记录
+class ChatMessageView(GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
+    """
+    list:
+    返回订单聊天记录所有数据
+
+    create:
+    创建订单聊天记录数据
+    """
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+    filter_backends = (DjangoFilterBackend, OrderingFilter,)
+    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated,)
+    ordering_fields = ['add_time']
+    filterset_fields = ["order"]
+
+
+# 订单评论记录
+class CourseCommentsView(GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin):
+    """
+    list:
+    返回订单评论记录所有数据
+
+    create:
+    创建订单评论记录数据
+
+    read:
+    查看订单评论记录数据 查找索引为 子订单 id
+    """
+    serializer_class = CourseCommentsSerializer
+    filter_backends = (OrderingFilter,)
+    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated, CommentsReadOnly)
+    ordering_fields = ['add_time']
+    lookup_field = 'order'
+    filterset_fields = ["order"]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        re_dict = serializer.data if self.perform_create(serializer) else "无权操作"
+        headers = self.get_success_headers(serializer.data)
+        return Response(re_dict, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def perform_create(self, serializer):
+        if self.request.user.is_driver == "n" and CustomerOrder.objects.filter(initiator=self.request.user,
+                                                                               id=self.request.data["order"]):
+            return serializer.save()
+    
+    def get_queryset(self):
+        return CourseComments.objects.filter(order__initiator=self.request.user)
 
 
 # 取消订单日志
@@ -109,62 +182,9 @@ class CancelLogView(GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelM
     serializer_class = CancelLogSerializer
     filter_backends = (OrderingFilter,)
     pagination_class = CustomPagination
-    permission_classes = (IsAuthenticated, OrderHasUserOrReadOnly)
-    lookup_field = 'order_id'
+    permission_classes = (IsAuthenticated,)
     ordering_fields = ['add_time']
     
     def get_queryset(self):
         # 获得当前登录人的取消订单记录
-        return CancelLog.objects.filter(
-            Q(order__initiator__user_id=self.request.user) | Q(m_order__initiator__user_id=self.request.user))
-
-
-# 订单聊天记录
-class ChatMessageView(GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
-    """
-    list:
-    返回订单聊天记录所有数据
-
-    create:
-    创建订单聊天记录数据
-    """
-    serializer_class = ChatMessageSerializer
-    filter_backends = (DjangoFilterBackend, OrderingFilter,)
-    pagination_class = CustomPagination
-    permission_classes = (IsAuthenticated, OrderHasUserOrReadOnly)
-    ordering_fields = ['add_time']
-    filterset_fields = ["order"]
-    
-    def get_queryset(self):
-        # 获得当前登录人的订单聊天记录
-        return ChatMessage.objects.filter(
-            Q(order__initiator__user_id=self.request.user) | Q(m_order__initiator__user_id=self.request.user))
-
-
-# 订单评论记录
-class CourseCommentsView(GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin):
-    """
-    list:
-    返回订单评论记录所有数据
-
-    create:
-    创建订单评论记录数据
-
-    read:
-    查看订单评论记录数据
-    """
-    serializer_class = CourseCommentsSerializer
-    filter_backends = (OrderingFilter,)
-    pagination_class = CustomPagination
-    permission_classes = (IsAuthenticated, OrderHasUserOrReadOnly)
-    lookup_field = 'order_id'
-    ordering_fields = ['add_time']
-    
-    def get_queryset(self):
-        # 获得当前登录人的评论记录
-        return CourseComments.objects.filter(order__initiator__user_id=self.request.user)
-    
-    def perform_create(self, serializer):
-        if self.request.user.is_driver == "y":
-            return "无权操作"
-        serializer.save()
+        return CancelLog.objects.filter(submitter=self.request.user).order_by("add_time")

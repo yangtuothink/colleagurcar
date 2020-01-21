@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
 from rest_framework import serializers
 from .models import DriverOrder, CustomerOrder, CourseComments, ChatMessage, CancelLog
+from examine.models import DriverProfile
+from users.models import UserProfile
 
 
 class DriverOrderSerializer(serializers.ModelSerializer):
@@ -67,19 +68,64 @@ class CustomerOrderSerializer(serializers.ModelSerializer):
 
 
 class CourseCommentsSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CourseComments
         fields = "__all__"
 
 
 class ChatMessageSerializer(serializers.ModelSerializer):
+    initiator = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
+    
     class Meta:
         model = ChatMessage
         fields = "__all__"
 
 
 class CancelLogSerializer(serializers.ModelSerializer):
+    submitter = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
+    deduction = serializers.CharField(read_only=True)
+    
+    def create(self, validated_data):
+        submitter = self.context["request"].user
+        m_order = validated_data["m_order"]
+        order = validated_data["order"]
+        is_driver = validated_data["is_driver"]
+        deduction = 5
+        
+        if is_driver == "y":
+            # 主订单状态更新
+            m_order.pay_status = "6"
+            m_order.save()
+            # 主订单扣分
+            d_obj = DriverProfile.objects.get(user_id=submitter.id)
+            d_obj.driver_score = d_obj.driver_score - 5 if d_obj.driver_score >= 5 else 0
+            # 主订单下所有子订单更新
+            for i in CustomerOrder.objects.filter(m_order=m_order.id):
+                # 子订单司机扣分
+                if int(i.pay_status) == 1:
+                    d_obj.driver_score = d_obj.driver_score - 3 if d_obj.driver_score >= 3 else 0
+                    deduction += 3
+                if int(i.pay_status) == 2:
+                    d_obj.driver_score = d_obj.driver_score - 5 if d_obj.driver_score >= 5 else 0
+                    deduction += 5
+                i.pay_status = "6"
+                i.save()
+            d_obj.save()
+        else:
+            # 子订单状态更新
+            if int(order.pay_status) == 1:
+                # 乘客扣分
+                submitter.credit_score = submitter.credit_score - 5 if submitter.credit_score >= 5 else 0
+                submitter.save()
+            order.pay_status = "6"
+            order.save()
+        
+        validated_data["deduction"] = deduction
+        return CancelLog.objects.create(**validated_data)
     
     class Meta:
         model = CancelLog
