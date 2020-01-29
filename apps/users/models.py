@@ -49,7 +49,7 @@ class CustomerMessage(models.Model):
     message = models.CharField(max_length=500, verbose_name="信息内容", default="", blank=True, help_text="信息内容")
     has_read = models.CharField(max_length=30, default="未读", choices=(("y", "已读"), ("n", "未读")), verbose_name="n",
                                 blank=True, help_text="是否已读 0/1 - 未/已")
-    add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
+    add_time = models.DateField(default=datetime.now, verbose_name="添加时间")
     
     class Meta:
         verbose_name = "系统信息推送顾客"

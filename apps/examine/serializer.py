@@ -5,17 +5,22 @@ from users.serializer import UserProfileSerializer
 
 
 class ExamineLogSerializer(serializers.ModelSerializer):
-    applicant = serializers.IntegerField(help_text="司机 id")
+    applicant = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
     license = serializers.ImageField(help_text="驾照", required=True)
     f_id_card = serializers.ImageField(help_text="身份证正面照", required=True)
     b_id_card = serializers.ImageField(help_text="身份证背面照", required=True)
     f_car = serializers.ImageField(help_text="车正面照", required=True)
     l_car = serializers.ImageField(help_text="车左侧照", required=True)
     r_car = serializers.ImageField(help_text="车后侧照", required=True)
+    status = serializers.IntegerField(help_text="状态", label="当前状态", read_only=True)
 
     class Meta:
         model = ExamineLog
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ("add_time", )
+
 
 
 class UpdateExamineLogSerializer(serializers.ModelSerializer):

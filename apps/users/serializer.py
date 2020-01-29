@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
+
 from .models import UserProfile, BankCard, CustomerMessage, Banner
 
 
@@ -36,14 +38,36 @@ class UserOtherSerializer(serializers.ModelSerializer):
         exclude = ["password", "date_joined", "is_superuser"]
 
 
-class CreateUserProfile(serializers.ModelSerializer):
-    nick_name = serializers.CharField(help_text="昵称")
-    username = serializers.CharField(help_text="用户名")
-    password = serializers.CharField(help_text="密码")
+class UserRegSerializer(serializers.ModelSerializer):
+    nick_name = serializers.CharField(default="",
+                                      help_text="昵称")
+
+    username = serializers.CharField(help_text="用户名",
+                                     required=True,
+                                     validators=[
+                                         UniqueValidator(queryset=UserProfile.objects.all(), message="用户已经存在")],
+                                     error_messages={
+                                         "required": "请输入用户名",
+                                     })
+    password = serializers.CharField(required=True,
+                                     error_messages={
+                                         "required": "请输入用户名",
+                                     }, help_text="密码", write_only=True)
+
+    def validate(self, attrs):
+        attrs["password"] = make_password(attrs["password"])
+        return attrs
 
     class Meta:
         model = UserProfile
-        fields = "__all__"
+        fields = ("nick_name", "username", "password", "image")
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(label="用户图像", required=False, help_text="用户图像")
+    class Meta:
+        model = UserProfile
+        fields = ["image", "nick_name", "mobile"]
 
 
 class CustomerMessageSerializer(serializers.ModelSerializer):
