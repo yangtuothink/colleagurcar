@@ -57,16 +57,15 @@ class DriverOrderView(viewsets.ModelViewSet):
         return Response(re_dict, status=status.HTTP_201_CREATED, headers=headers)
     
     def perform_create(self, serializer):
-        print(self.request.user.is_driver)
         if self.request.user.is_driver == "y":
             return serializer.save()
     
     def get_queryset(self):
         # 司机状态只能查看自己的订单
         if self.request.user.is_driver == "y":
-            return DriverOrder.objects.all().filter(initiator=self.request.user)
+            return DriverOrder.objects.all().filter(initiator=self.request.user).order_by('-add_time')
         # 乘客看到所有待预定的订单
-        return DriverOrder.objects.filter(r_status="y")
+        return DriverOrder.objects.filter(r_status="y").order_by('-add_time')
 
 
 # 用户订单视图
@@ -96,9 +95,9 @@ class CustomerOrderView(viewsets.ModelViewSet):
     def get_queryset(self):
         # 乘客只能查看自己的订单
         if self.request.user.is_driver == "n":
-            return CustomerOrder.objects.all().filter(initiator=self.request.user)
+            return CustomerOrder.objects.all().filter(initiator=self.request.user).order_by('-add_time')
         # 司机看到所有可预约的订单
-        return CustomerOrder.objects.filter(r_status="y")
+        return CustomerOrder.objects.filter(r_status="y").order_by('-add_time')
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -122,7 +121,7 @@ class ChatMessageView(GenericViewSet, mixins.ListModelMixin, mixins.CreateModelM
     create:
     创建订单聊天记录数据
     """
-    queryset = ChatMessage.objects.all()
+    queryset = ChatMessage.objects.all().order_by('-add_time')
     serializer_class = ChatMessageSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter,)
     pagination_class = CustomPagination
@@ -164,7 +163,7 @@ class CourseCommentsView(GenericViewSet, mixins.ListModelMixin, mixins.RetrieveM
             return serializer.save()
     
     def get_queryset(self):
-        return CourseComments.objects.filter(order__initiator=self.request.user)
+        return CourseComments.objects.filter(order__initiator=self.request.user).order_by('-add_time')
 
 
 # 取消订单日志
@@ -187,4 +186,4 @@ class CancelLogView(GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelM
     
     def get_queryset(self):
         # 获得当前登录人的取消订单记录
-        return CancelLog.objects.filter(submitter=self.request.user).order_by("add_time")
+        return CancelLog.objects.filter(submitter=self.request.user).order_by("-add_time")
