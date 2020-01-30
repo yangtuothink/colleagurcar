@@ -1,11 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.hashers import make_password
-from django.db import IntegrityError
 from django.db.models import Q
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_jwt.serializers import jwt_payload_handler, jwt_encode_handler
 
 from common.keys import AD_CAROUSEL_PAGES
 from users.serializer import *
@@ -38,32 +37,37 @@ class UserInfoOption(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewset
     retrieve:
         获取用户
     '''
-    serializer_class = CreateUserProfile
+    serializer_class = UserRegSerializer
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return UserProfileSerializer
+        elif self.action == "create":
+            return UserRegSerializer
+
+        return UserProfileSerializer
 
     def get_permissions(self):
-        if self.action != "create":
-            return [IsAuthenticated(), ]
+        if self.action == "retrieve":
+            return [permissions.IsAuthenticated()]
+        elif self.action == "create":
+            return []
+
         return []
 
     # 创建用户
     def create(self, request, *args, **kwargs):
-        user = UserProfile()
-        nick_name = request.POST.get("nick_name")
-        username = request.POST.get("username")
-        password = make_password(request.POST.get("password"))
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.perform_create(serializer)
+        re_dict = serializer.data
+        payload = jwt_payload_handler(user)
+        re_dict["token"] = jwt_encode_handler(payload)
+        re_dict["id"] = user.id
 
-        if nick_name and username and password:
-            user.nick_name = nick_name
-            user.username = username
-            user.password = password
-            try:
-                user.save()
-                ret = UserProfileSerializer(user)
-                return Response(ret.data)
-            except IntegrityError as e:
-                return Response({"error": "用户已存在"})
-        else:
-            return Response({"error": "传入参数错误"})
+        headers = self.get_success_headers(serializer.data)
+        return Response(re_dict, status=status.HTTP_201_CREATED, headers=headers)
 
     # 获取用户id的资料
     def retrieve(self, request, *args, **kwargs):
@@ -80,6 +84,9 @@ class UserInfoOption(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewset
         else:
             return Response({"error": "未找到用户"})
 
+    def perform_create(self, serializer):
+        return serializer.save()
+
 
 class ModifyUserInfo(mixins.CreateModelMixin, viewsets.GenericViewSet):
     '''
@@ -88,16 +95,16 @@ class ModifyUserInfo(mixins.CreateModelMixin, viewsets.GenericViewSet):
     '''
 
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserOtherSerializer
+    serializer_class = UserUpdateSerializer
 
     # 用户修改信息
     def create(self, request, *args, **kwargs):
-        img_icon = request.FILES.get("user_avatar")
-        nick_name = request.POST.get("nick_name")
-        mobile = request.POST.get("mobile")
+        image = request.data.get("image")
+        nick_name = request.data.get("nick_name")
+        mobile = request.data.get("mobile")
         user = request.user
-        if img_icon:
-            user.image = img_icon
+        if image:
+            user.image = image
         if nick_name:
             user.nick_name = nick_name
         if mobile:

@@ -65,7 +65,7 @@ class UpdateVerifyIdentyInfo(mixins.CreateModelMixin, viewsets.GenericViewSet):
         修改司机的审核信息
     '''
     permission_classes = (IsAuthenticated,)
-    serializer_class = UpdateExamineLogSerializer
+    serializer_class = ExamineLogSerializer
 
     # 修改审核的图片
     def create(self, request, *args, **kwargs):
