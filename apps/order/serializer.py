@@ -11,7 +11,7 @@ class DriverOrderSerializer(serializers.ModelSerializer):
     trade_no = serializers.CharField(read_only=True)
     order_sn = serializers.CharField(read_only=True)
     pay_time = serializers.DateTimeField(read_only=True)
-    initiator = serializers.HiddenField(
+    initiator = serializers.CharField(
         default=serializers.CurrentUserDefault()
     )
     
@@ -42,7 +42,7 @@ class CustomerOrderSerializer(serializers.ModelSerializer):
     trade_no = serializers.CharField(read_only=True)
     order_sn = serializers.CharField(read_only=True)
     pay_time = serializers.DateTimeField(read_only=True)
-    initiator = serializers.HiddenField(
+    initiator = serializers.CharField(
         default=serializers.CurrentUserDefault()
     )
     

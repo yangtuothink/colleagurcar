@@ -26,7 +26,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_jwt.views import obtain_jwt_token
 
 from colleagurcar.settings import MEDIA_ROOT
-from examine.views import VerifyIdentyInfo, UpdateVerifyIdentyInfo
+from examine.views import VerifyIdentyInfo, UpdateVerifyIdentyInfo, DriverProfileView
 from order.views import DriverOrderView, CustomerOrderView, CourseCommentsView
 from order.views import CancelLogView, ChatMessageView
 from users.view import BannerViewset, UserInfoOption, ModifyUserInfo
@@ -38,6 +38,7 @@ router.register(r'customer_orders', CustomerOrderView, basename='customer_orders
 router.register(r'comments', CourseCommentsView, basename='comments')
 router.register(r'cancel_log', CancelLogView, basename='cancel_log')
 router.register(r'chat_message', ChatMessageView, basename='chat_message')
+router.register(r'driver_info', DriverProfileView, basename='driver_info')
 
 # 轮播图url
 router.register(r'banners', BannerViewset, basename="banners")

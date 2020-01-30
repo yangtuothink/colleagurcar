@@ -1,9 +1,12 @@
+from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
 from rest_framework import mixins, viewsets
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from examine.models import ExamineLog, DriverProfile
-from examine.serializer import DriverProfileSerializer, ExamineLogSerializer, UpdateExamineLogSerializer
+from examine.serializer import DriverProfileSerializer, ExamineLogSerializer, UpdateExamineLogSerializer, \
+    DriverProfileSerializer1
 
 
 class VerifyIdentyInfo(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -16,7 +19,7 @@ class VerifyIdentyInfo(mixins.CreateModelMixin, mixins.RetrieveModelMixin, views
     '''
     permission_classes = (IsAuthenticated,)
     serializer_class = ExamineLogSerializer
-
+    
     # 车主审核的图片
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -26,11 +29,11 @@ class VerifyIdentyInfo(mixins.CreateModelMixin, mixins.RetrieveModelMixin, views
         f_car = request.FILES.get("f_car")
         l_car = request.FILES.get("l_car")
         r_car = request.FILES.get("r_car")
-
+        
         if f_id_card and b_id_card and driver_license and f_car and l_car and r_car:
             # 先创建一个司机信息
             driver_profile, _ = DriverProfile.objects.get_or_create(user_id=user)
-
+            
             car_user, created = ExamineLog.objects.get_or_create(applicant=driver_profile)
             if created:
                 car_user.license = driver_license
@@ -40,17 +43,17 @@ class VerifyIdentyInfo(mixins.CreateModelMixin, mixins.RetrieveModelMixin, views
                 car_user.l_car = l_car
                 car_user.r_car = r_car
                 car_user.save()
-
+            
             ser = DriverProfileSerializer(instance=driver_profile)
             return Response(ser.data)
-
+        
         else:
             return Response({"error": "上传信息不足"})
-
+    
     # 查看当前的审核进度
     def retrieve(self, request, *args, **kwargs):
         user = request.user
-
+        
         user_info = DriverProfile.objects.filter(user_id=user).first()
         if user_info:
             ser = DriverProfileSerializer(instance=user_info)
@@ -66,7 +69,7 @@ class UpdateVerifyIdentyInfo(mixins.CreateModelMixin, viewsets.GenericViewSet):
     '''
     permission_classes = (IsAuthenticated,)
     serializer_class = ExamineLogSerializer
-
+    
     # 修改审核的图片
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -77,7 +80,7 @@ class UpdateVerifyIdentyInfo(mixins.CreateModelMixin, viewsets.GenericViewSet):
         l_car = request.FILES.get("l_car")
         r_car = request.FILES.get("r_car")
         driver_user = DriverProfile.objects.get(user_id=user)
-
+        
         car_user = ExamineLog.objects.filter(applicant=driver_user).first()
         if car_user:
             car_user = car_user
@@ -98,3 +101,18 @@ class UpdateVerifyIdentyInfo(mixins.CreateModelMixin, viewsets.GenericViewSet):
             return Response(ser.data)
         else:
             return Response({"error": "未开通司机验证"})
+
+
+class DriverProfileView(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = DriverProfile.objects.all()
+    permission_classes = (IsAuthenticated,)
+    serializer_class = DriverProfileSerializer1
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ["user_id__username"]
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        if serializer.data:
+            return Response(serializer.data[0])
+        return Response({})

@@ -15,12 +15,11 @@ class ExamineLogSerializer(serializers.ModelSerializer):
     l_car = serializers.ImageField(help_text="车左侧照", required=True)
     r_car = serializers.ImageField(help_text="车后侧照", required=True)
     status = serializers.IntegerField(help_text="状态", label="当前状态", read_only=True)
-
+    
     class Meta:
         model = ExamineLog
         # fields = "__all__"
-        exclude = ("add_time", )
-
+        exclude = ("add_time",)
 
 
 class UpdateExamineLogSerializer(serializers.ModelSerializer):
@@ -29,19 +28,25 @@ class UpdateExamineLogSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class DriverProfileSerializer1(serializers.ModelSerializer):
+    class Meta:
+        model = DriverProfile
+        fields = "__all__"
+
+
 class DriverProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     examine_log = serializers.SerializerMethodField()
-
+    
     def get_user(self, obj):
         user_info_ser = UserProfileSerializer(instance=obj.user_id)
         return user_info_ser.data
-
+    
     def get_examine_log(self, obj):
         driver_examinelog = ExamineLog.objects.get(applicant=obj)
         ser = UpdateExamineLogSerializer(instance=driver_examinelog)
         return ser.data
-
+    
     class Meta:
         model = DriverProfile
         exclude = ["add_time"]
