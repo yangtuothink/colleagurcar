@@ -6,7 +6,7 @@ Django==1.11.23
 djangorestframework_jwt==1.11.0
 django_filter==2.2.0
 django_filters==0.2.1
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 djangorestframework-jwt==1.11.0
 idna==2.8
 itypes==1.1.0
